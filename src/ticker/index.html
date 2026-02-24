@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>BTC Ticker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="widget" id="widget">
+
+    <!-- BTC button — luôn hiển thị, ở trên cùng -->
+    <div class="btc-row" id="row-btcusdt">
+      <span class="coin-icon btc-icon-btn">₿</span>
+      <span class="btc-label">BTC</span>
+      <span class="coin-price btc-price" id="price-btcusdt">—</span>
+      <span class="coin-change" id="change-btcusdt">—</span>
+      <span class="live-dot" id="dot-btcusdt"></span>
+    </div>
+
+    <!-- Coins panel: ETH, BNB, SOL — xổ xuống khi hover -->
+    <div class="coins-panel" id="coins-panel">
+      <div class="coin-row" id="row-ethusdt">
+        <span class="coin-icon" style="color:#627eea">Ξ</span>
+        <span class="coin-name">ETH</span>
+        <span class="coin-price" id="price-ethusdt">—</span>
+        <span class="coin-change" id="change-ethusdt">—</span>
+        <span class="live-dot" id="dot-ethusdt"></span>
+      </div>
+      <div class="coin-row" id="row-bnbusdt">
+        <span class="coin-icon" style="color:#f3ba2f">◈</span>
+        <span class="coin-name">BNB</span>
+        <span class="coin-price" id="price-bnbusdt">—</span>
+        <span class="coin-change" id="change-bnbusdt">—</span>
+        <span class="live-dot" id="dot-bnbusdt"></span>
+      </div>
+      <div class="coin-row" id="row-solusdt">
+        <span class="coin-icon" style="color:#9945ff">◎</span>
+        <span class="coin-name">SOL</span>
+        <span class="coin-price" id="price-solusdt">—</span>
+        <span class="coin-change" id="change-solusdt">—</span>
+        <span class="live-dot" id="dot-solusdt"></span>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const widget    = document.getElementById('widget');
+    const DRAG_THRESHOLD = 5;
+    let isDragging  = false;
+    let hasMoved    = false;
+    let startX = 0, startY = 0;
+    let collapseTimer = null;
+
+    // ── Hover expand / collapse ──────────────────────────────────
+    widget.addEventListener('mouseenter', () => {
+      if (isDragging) return;
+      clearTimeout(collapseTimer);
+      widget.classList.add('expanded');
+      window.electronAPI.expandTicker();
+    });
+
+    widget.addEventListener('mouseleave', () => {
+      if (isDragging) return;
+      collapseTimer = setTimeout(() => {
+        widget.classList.remove('expanded');
+        window.electronAPI.collapseTicker();
+      }, 120);
+    });
+
+    // ── Drag ────────────────────────────────────────────────────
+    widget.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      isDragging = true;
+      hasMoved   = false;
+      startX = e.screenX;
+      startY = e.screenY;
+      window.electronAPI.tickerDragStart(e.screenX, e.screenY);
+      e.preventDefault();
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      if (Math.abs(e.screenX - startX) > DRAG_THRESHOLD ||
+          Math.abs(e.screenY - startY) > DRAG_THRESHOLD) {
+        hasMoved = true;
+        widget.classList.add('dragging');
+      }
+      window.electronAPI.tickerDragMove(e.screenX, e.screenY);
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (!isDragging) return;
+      isDragging = false;
+      widget.classList.remove('dragging');
+      window.electronAPI.tickerDragEnd();
+      if (!hasMoved) window.electronAPI.togglePopup();
+    });
+
+    // ── Price updates ───────────────────────────────────────────
+    window.electronAPI.onCoinsUpdate((coins) => {
+      coins.forEach((coin) => {
+        const priceEl  = document.getElementById(`price-${coin.symbol}`);
+        const changeEl = document.getElementById(`change-${coin.symbol}`);
+        const dotEl    = document.getElementById(`dot-${coin.symbol}`);
+        const rowEl    = document.getElementById(`row-${coin.symbol}`);
+        if (!priceEl) return;
+
+        priceEl.textContent  = `$${coin.price}`;
+        const sign = coin.isUp ? '+' : '';
+        changeEl.textContent = `${sign}${coin.changePercent}%`;
+        changeEl.className   = `coin-change ${coin.isUp ? 'up' : 'down'}`;
+        dotEl.className      = `live-dot ${coin.isUp ? 'up' : 'down'}`;
+
+        rowEl.classList.remove('flash');
+        void rowEl.offsetWidth;
+        rowEl.classList.add('flash');
+      });
+    });
+  </script>
+</body>
+</html>

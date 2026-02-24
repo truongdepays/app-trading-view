@@ -1,0 +1,13 @@
+appId: com.cdr.btc-ticker
+productName: BTC Ticker
+directories:
+  output: dist
+files:
+  - src/**/*
+  - assets/**/*
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Utility
+  icon: assets/icon.png

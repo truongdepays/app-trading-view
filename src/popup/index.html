@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BTC Ticker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="popup-wrapper" id="popup-wrapper">
+
+    <!-- Header -->
+    <div class="header" id="header">
+      <div class="header-left">
+        <span class="btc-icon">₿</span>
+        <div class="header-info">
+          <span class="pair-label">BTC · USDT</span>
+          <span class="price-display" id="price-display">—</span>
+        </div>
+        <span class="change-badge" id="change-badge">—</span>
+      </div>
+
+      <div class="header-right">
+        <span class="live-dot" id="live-dot"></span>
+        <span class="live-label">LIVE</span>
+        <button class="close-btn" id="close-btn" title="Close">✕</button>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-area">
+      <div id="chart-container"></div>
+    </div>
+
+    <!-- Resize handles -->
+    <div class="resize-handle" data-dir="e"></div>
+    <div class="resize-handle" data-dir="s"></div>
+    <div class="resize-handle" data-dir="se"></div>
+    <div class="resize-handle" data-dir="sw"></div>
+    <div class="resize-handle" data-dir="ne"></div>
+
+  </div>
+
+  <script src="chart.js"></script>
+  <script>
+    const priceDisplay = document.getElementById('price-display');
+    const changeBadge  = document.getElementById('change-badge');
+    const closeBtn     = document.getElementById('close-btn');
+    const popupWrapper = document.getElementById('popup-wrapper');
+    const liveDot      = document.getElementById('live-dot');
+
+    // Animation nhập
+    requestAnimationFrame(() => {
+      popupWrapper.classList.add('visible');
+    });
+
+    // Close button
+    closeBtn.addEventListener('click', () => {
+      window.electronAPI.closePopup();
+    });
+
+    // Nhận price update từ main process
+    window.electronAPI.onPriceUpdate((data) => {
+      priceDisplay.textContent = `$${data.price}`;
+      const sign = data.isUp ? '+' : '';
+      changeBadge.textContent = `${sign}${data.changePercent}%`;
+      changeBadge.className = 'change-badge ' + (data.isUp ? 'up' : 'down');
+      liveDot.className = 'live-dot ' + (data.isUp ? 'up' : 'down');
+    });
+
+    // ── Resize logic ──────────────────────────────────────────────
+    const MIN_W = 500, MIN_H = 350;
+    let resizing = null;
+
+    document.querySelectorAll('.resize-handle').forEach((handle) => {
+      handle.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        resizing = {
+          dir:    handle.dataset.dir,
+          startX: e.screenX,
+          startY: e.screenY,
+          x0: window.screenX,
+          y0: window.screenY,
+          w0: window.outerWidth,
+          h0: window.outerHeight,
+        };
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!resizing) return;
+      const { dir, startX, startY, x0, y0, w0, h0 } = resizing;
+      const dx = e.screenX - startX;
+      const dy = e.screenY - startY;
+
+      let newX = x0, newY = y0, newW = w0, newH = h0;
+
+      if (dir.includes('e')) newW = Math.max(MIN_W, w0 + dx);
+      if (dir.includes('s')) newH = Math.max(MIN_H, h0 + dy);
+      if (dir.includes('w')) { newW = Math.max(MIN_W, w0 - dx); newX = x0 + (w0 - newW); }
+      if (dir.includes('n')) { newH = Math.max(MIN_H, h0 - dy); newY = y0 + (h0 - newH); }
+
+      window.electronAPI.resizePopup({ x: newX, y: newY, width: newW, height: newH });
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (!resizing) return;
+      resizing = null;
+      document.body.style.userSelect = '';
+    });
+  </script>
+</body>
+</html>

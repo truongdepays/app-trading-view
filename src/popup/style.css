@@ -1,0 +1,235 @@
+/* ── Variables ─────────────────────────────────────────────────── */
+:root {
+  --bg:            #131722;
+  --bg-header:     rgba(255, 255, 255, 0.015);
+  --border:        rgba(255, 255, 255, 0.07);
+  --border-radius: 16px;
+  --up:            #26a69a;
+  --down:          #ef5350;
+  --text-primary:  rgba(255, 255, 255, 0.85);
+  --text-secondary:rgba(255, 255, 255, 0.35);
+}
+
+/* ── Reset ─────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width:  100%;
+  height: 100vh;
+  overflow: hidden;
+  background: transparent;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ── Wrapper (animation container) ────────────────────────────── */
+.popup-wrapper {
+  position: relative;
+  width:  100%;
+  height: 100%;
+  background: var(--bg);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+
+  /* Animation state: start hidden */
+  opacity: 0;
+  transform: translateY(12px) scale(0.98);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.popup-wrapper.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* ── Resize handles ────────────────────────────────────────────── */
+.resize-handle {
+  position: absolute;
+  z-index: 100;
+  -webkit-app-region: no-drag;
+}
+
+/* Cạnh phải */
+.resize-handle[data-dir="e"] {
+  right: 0; top: 6px; bottom: 6px; width: 6px;
+  cursor: e-resize;
+}
+/* Cạnh dưới */
+.resize-handle[data-dir="s"] {
+  bottom: 0; left: 6px; right: 6px; height: 6px;
+  cursor: s-resize;
+}
+/* Góc dưới-phải */
+.resize-handle[data-dir="se"] {
+  right: 0; bottom: 0; width: 16px; height: 16px;
+  cursor: se-resize;
+}
+/* Góc dưới-trái */
+.resize-handle[data-dir="sw"] {
+  left: 0; bottom: 0; width: 16px; height: 16px;
+  cursor: sw-resize;
+}
+/* Góc trên-phải */
+.resize-handle[data-dir="ne"] {
+  right: 0; top: 0; width: 16px; height: 16px;
+  cursor: ne-resize;
+}
+
+/* Grip icon ở góc dưới-phải */
+.resize-handle[data-dir="se"]::after {
+  content: '';
+  position: absolute;
+  right: 3px; bottom: 3px;
+  width: 10px; height: 10px;
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,0.25) 1px, transparent 1px);
+  background-size: 4px 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.popup-wrapper:hover .resize-handle[data-dir="se"]::after {
+  opacity: 1;
+}
+
+/* ── Header ────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--bg-header);
+  border-bottom: 1px solid var(--border);
+  -webkit-app-region: drag;
+  user-select: none;
+  flex-shrink: 0;
+  height: 52px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btc-icon {
+  font-size: 22px;
+  color: #f7931a;
+  line-height: 1;
+}
+
+.header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.pair-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.price-display {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.change-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.change-badge.up {
+  color: var(--up);
+  background: rgba(38, 166, 154, 0.12);
+}
+
+.change-badge.down {
+  color: var(--down);
+  background: rgba(239, 83, 80, 0.12);
+}
+
+/* ── Header right ──────────────────────────────────────────────── */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  -webkit-app-region: no-drag;
+}
+
+.live-dot {
+  width:  7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.live-dot.up   { background: var(--up); }
+.live-dot.down { background: var(--down); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
+.live-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.close-btn {
+  -webkit-app-region: no-drag;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  width:  26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  background: rgba(239, 83, 80, 0.15);
+  color: var(--down);
+}
+
+/* ── Chart area ────────────────────────────────────────────────── */
+.chart-area {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+#chart-container {
+  width:  100%;
+  height: 100%;
+}
+
+#chart-container iframe {
+  border: none !important;
+}
